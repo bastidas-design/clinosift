@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Iniciar sesión — ClinoSift</title>
+<link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body class="auth-body">
+<main class="auth-wrap">
+  <div class="auth-card">
+    <img src="assets/images/logo.svg" alt="" width="64" height="64" class="auth-logo">
+    <h1>ClinoSift</h1>
+    <p class="auth-sub">Sistema de Gestión Médica</p>
+
+    <form class="auth-form" id="loginForm">
+      <label for="numDoc">Número de documento</label>
+      <input type="text" id="numDoc" name="numDoc" placeholder="Ingrese su número" autocomplete="username" required>
+
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" name="password" placeholder="Ingrese su contraseña" autocomplete="current-password" required>
+
+      <p class="auth-error" id="authError" hidden></p>
+
+      <div class="auth-actions">
+        <button type="submit" class="btn btn-primary btn-block">Iniciar sesión</button>
+        <a href="registro.html" class="btn btn-ghost btn-block">Registrarme</a>
+      </div>
+      <a href="#" class="auth-forgot">Olvidé mi contraseña</a>
+    </form>
+
+    <div class="auth-demo">
+      <p>Credenciales de prueba del prototipo:</p>
+      <ul class="auth-demo-list">
+        <li><strong>Paciente:</strong> documento 1007120003 · contraseña 1007120003</li>
+        <li><strong>Médico:</strong> documento 104756007 · contraseña 104756007</li>
+      </ul>
+    </div>
+  </div>
+</main>
+
+<script src="assets/js/db.js"></script>
+<script>
+  // Si ya hay una sesion activa, entra directo a su panel (el rol lo decide la BD, no el login)
+  (function () {
+    var session = window.ClinoDB.getSession();
+    if (session) {
+      window.location.replace(session.rol === 'medico' ? 'medico/dashboard.html' : 'paciente/dashboard.html');
+    }
+  })();
+
+  document.getElementById('loginForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var documento = document.getElementById('numDoc').value.trim();
+    var password = document.getElementById('password').value;
+    var errorEl = document.getElementById('authError');
+
+    var resultado = window.ClinoDB.login(documento, password);
+    if (!resultado.ok) {
+      errorEl.textContent = resultado.error;
+      errorEl.hidden = false;
+      return;
+    }
+
+    var rol = resultado.usuario.rol;
+    if (rol === 'medico') {
+      window.location.href = 'medico/dashboard.html';
+    } else if (rol === 'paciente') {
+      window.location.href = 'paciente/dashboard.html';
+    } else {
+      errorEl.textContent = 'El panel de administrador aún no está disponible en este prototipo.';
+      errorEl.hidden = false;
+      window.ClinoDB.logout();
+    }
+  });
+</script>
+</body>
+</html>

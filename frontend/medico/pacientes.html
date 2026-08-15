@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de Pacientes — ClinoSift</title>
+<link rel="icon" href="../assets/images/logo.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/css/app.css">
+<script>window.CLINO_REQUIRED_ROLE = "medico";</script>
+<script src="../assets/js/db.js"></script>
+<script src="../assets/js/guard.js"></script>
+</head>
+<body>
+<div class="app-shell">
+
+  <aside class="sidebar">
+    <div class="sidebar-top">
+      <img src="../assets/images/logo.svg" alt="" width="36" height="36">
+      <div class="sidebar-portal">
+        <strong>ClinoSift</strong>
+        <span>Portal Médico</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a class="nav-link" href="dashboard.html"><svg class="nav-ic" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 10 4l7 6.5"/><path d="M5 9v6.5a1 1 0 0 0 1 1h3v-4h2v4h3a1 1 0 0 0 1-1V9"/></svg><span>Inicio</span></a>
+<a class="nav-link active" href="pacientes.html"><svg class="nav-ic" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.2" cy="7" r="2.6"/><circle cx="14" cy="8.4" r="2.1"/><path d="M2.7 17c.5-3 2.3-4.7 4.5-4.7s4 1.7 4.5 4.7"/><path d="M12.6 12.7c2 .2 3.5 1.7 3.9 4.3"/></svg><span>Pacientes</span></a>
+<a class="nav-link" href="citas.html"><svg class="nav-ic" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4.5" width="14" height="12.5" rx="1.5"/><path d="M3 8.5h14M7 3v3M13 3v3"/></svg><span>Citas</span></a>
+<a class="nav-link" href="configuracion.html"><svg class="nav-ic" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.6"/><path d="M10 3v1.8M10 15.2V17M17 10h-1.8M4.8 10H3M15 5l-1.3 1.3M6.3 13.7 5 15M15 15l-1.3-1.3M6.3 6.3 5 5"/></svg><span>Configuración</span></a>
+
+    </nav>
+
+    <div class="sidebar-bottom">
+      <div class="sidebar-user">
+        <span class="avatar avatar-neutral" data-user-initials>--</span>
+        <div>
+          <strong data-user-name>—</strong>
+          <span data-user-role>—</span>
+        </div>
+      </div>
+      <a class="nav-link nav-link-danger" href="#" id="logoutLink"><svg class="nav-ic" width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 17H4.5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1H8"/><path d="M13 14l4-4-4-4M7.5 10H17"/></svg><span>Cerrar sesión</span></a>
+    </div>
+  </aside>
+
+  <div class="main-col">
+    <header class="topbar">
+      <button class="icon-btn sidebar-toggle" id="sidebarToggle" aria-label="Abrir menú"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5h14M3 10h14M3 14.5h14"/></svg></button>
+      <p class="breadcrumb"><a href="dashboard.html">ClinoSift</a><span><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7.5 4.5 13 10l-5.5 5.5"/></svg></span>Gestión de Pacientes</p>
+
+      <div class="topbar-actions">
+        <div class="notif-wrap">
+          <button class="icon-btn" id="notifBtn" aria-haspopup="true" aria-expanded="false">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.3a4.2 4.2 0 0 0-4.2 4.2v2.6L4.3 13h11.4l-1.5-2.9V7.5A4.2 4.2 0 0 0 10 3.3Z"/><path d="M8.3 15.7a1.7 1.7 0 0 0 3.4 0"/></svg>
+            <span class="notif-dot">2</span>
+          </button>
+          <div class="notif-panel" id="notifPanel" hidden>
+            <div class="notif-panel-head">
+              <strong>Notificaciones</strong>
+              <a href="#" class="notif-mark">Marcar todas leídas</a>
+            </div>
+            <div class="notif-item">
+              <span class="notif-ic notif-ic-ok"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 8 14.5 16 5.5"/></svg></span>
+              <div>
+                <p>Cita confirmada</p>
+                <span>Dr. Oscar Cabrera Pino · hoy 9:00 a.m.</span>
+              </div>
+            </div>
+            <div class="notif-item">
+              <span class="notif-ic notif-ic-info"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h6l3 3v11.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z"/><path d="M12 2.5V6h3.2"/><path d="M7 10h6M7 12.7h6M7 15.4h4"/></svg></span>
+              <div>
+                <p>Nuevo resultado disponible</p>
+                <span>Análisis de sangre listo para revisar</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <span class="avatar avatar-neutral avatar-sm" data-user-initials>--</span>
+      </div>
+    </header>
+
+    <main class="page">
+      
+<div class="page-head page-head-row">
+  <div>
+    <h1>Gestión de Pacientes</h1>
+    <p>Pacientes que tienen al menos una cita contigo.</p>
+  </div>
+</div>
+
+<ul class="patient-grid" role="list" id="listaPacientes"></ul>
+<p class="empty-hint" id="pacientesVacio" hidden>Aún no tienes pacientes con citas asignadas.</p>
+
+    </main>
+  </div>
+</div>
+
+<script src="../assets/js/ui.js"></script>
+<script src="../assets/js/app.js"></script>
+<script>
+  ClinoDB.pintarChrome();
+  document.getElementById('logoutLink').addEventListener('click', function (e) {
+    e.preventDefault();
+    ClinoDB.logout();
+    window.location.href = '../login.html';
+  });
+</script>
+
+<script>
+(function () {
+  var session = ClinoDB.getSession();
+  var pacientes = ClinoDB.getPacientesDeMedico(session.medicoId);
+  var ul = document.getElementById('listaPacientes');
+  document.getElementById('pacientesVacio').hidden = pacientes.length > 0;
+
+  pacientes.forEach(function (p) {
+    var citas = ClinoDB.getCitasPorPaciente(p.id).filter(function (c) { return c.medicoId === session.medicoId; });
+    var ultima = citas.sort(function (a, b) { return (b.fecha + b.hora).localeCompare(a.fecha + a.hora); })[0];
+    var li = document.createElement('li');
+    li.className = 'patient-card';
+    li.innerHTML =
+      '<span class="avatar avatar-neutral avatar-lg">' + ClinoDB.iniciales(p.nombres + ' ' + p.apellidos) + '</span>' +
+      '<div class="patient-info">' +
+        '<strong>' + p.nombres + ' ' + p.apellidos + '</strong>' +
+        '<span>CC ' + p.documento + '</span>' +
+        '<span class="patient-meta">Última cita: ' + (ultima ? ClinoUI.formatFecha(ultima.fecha) + ' &middot; ' + ultima.motivo : 'Sin registro') + '</span>' +
+      '</div>';
+    ul.appendChild(li);
+  });
+})();
+</script>
+
+</body>
+</html>
