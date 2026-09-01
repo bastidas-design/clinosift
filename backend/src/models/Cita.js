@@ -23,12 +23,14 @@ const citaSchema = new Schema(
       required: [true, 'La hora es obligatoria'],
       match: [/^\d{2}:\d{2}$/, 'La hora debe tener formato HH:MM']
     },
+    motivo: {
+      type: String,
+      required: [true, 'El motivo de consulta es obligatorio'],
+      trim: true
+    },
     estado: {
       type: String,
-      enum: {
-        values: ['pendiente', 'confirmada', 'cancelada'],
-        message: 'El estado debe ser pendiente, confirmada o cancelada'
-      },
+      enum: ['pendiente', 'confirmada', 'completada', 'cancelada'],
       default: 'pendiente'
     }
   },

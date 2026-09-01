@@ -5,28 +5,11 @@ if (sidebarToggle && sidebar) {
   sidebarToggle.addEventListener('click', () => sidebar.classList.toggle('open'));
 }
 
-// Panel de notificaciones (dropdown compacto)
-const notifBtn = document.getElementById('notifBtn');
-const notifPanel = document.getElementById('notifPanel');
-if (notifBtn && notifPanel) {
-  notifBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const isHidden = notifPanel.hasAttribute('hidden');
-    if (isHidden) {
-      notifPanel.removeAttribute('hidden');
-      notifBtn.setAttribute('aria-expanded', 'true');
-    } else {
-      notifPanel.setAttribute('hidden', '');
-      notifBtn.setAttribute('aria-expanded', 'false');
-    }
-  });
-  document.addEventListener('click', (e) => {
-    if (!notifPanel.contains(e.target) && e.target !== notifBtn) {
-      notifPanel.setAttribute('hidden', '');
-      notifBtn.setAttribute('aria-expanded', 'false');
-    }
-  });
-}
+// El panel de notificaciones ahora lo maneja por completo
+// ClinoAuth.iniciarNotificaciones() en api.js (trae datos reales del backend).
+// Antes había aquí un segundo manejador de clic sobre el mismo botón, y los
+// dos se pisaban entre sí: uno abría el panel y el otro lo cerraba en el
+// mismo clic, por eso nunca se veía nada al presionar la campana.
 
 // Tabs genéricos (Próximas/Historial, Favoritos/Todos, Resultados/Diagnósticos...)
 document.querySelectorAll('.tabs').forEach((tabGroup) => {

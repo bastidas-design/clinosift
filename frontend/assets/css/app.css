@@ -47,6 +47,17 @@
 
 * { box-sizing: border-box; }
 
+html, body { overflow-x: hidden; }
+
+/* Regla de seguridad: cualquier elemento con el atributo HTML "hidden" debe
+   quedar oculto SIEMPRE, sin importar qué otra clase (auth-success, auth-error,
+   modal-overlay, notif-panel, etc.) le esté aplicando display:flex/block/grid.
+   Sin esto, mensajes de éxito/error y modales aparecen visibles desde que carga
+   la página aunque su HTML diga hidden. Va primero y con !important a propósito:
+   es la única forma de que gane siempre, sin tener que acordarse de repetir
+   "[hidden]{display:none}" cada vez que se crea una clase nueva con display propio. */
+[hidden] { display: none !important; }
+
 body {
   margin: 0;
   font-family: var(--font-body);
@@ -211,7 +222,7 @@ input, select, textarea { font-family: inherit; }
 }
 .notif-panel {
   position: absolute; top: calc(100% + 10px); right: 0;
-  width: 320px; max-height: 380px; overflow-y: auto;
+  width: 320px; max-width: calc(100vw - 24px); max-height: 380px; overflow-y: auto;
   background: #fff; border: 1px solid var(--border); border-radius: var(--radius-m);
   box-shadow: var(--shadow-card); padding: 6px; z-index: 30;
 }
@@ -225,6 +236,10 @@ input, select, textarea { font-family: inherit; }
 .notif-ic { flex: none; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
 .notif-ic-ok { background: var(--ok-bg); color: var(--ok-fg); }
 .notif-ic-info { background: var(--violet-100); color: var(--violet-700); }
+.notif-ic-warn { background: var(--warn-bg); color: var(--warn-fg); }
+.notif-item-unread { background: var(--violet-100); cursor: pointer; }
+.notif-item-unread:hover { background: var(--violet-200); }
+.notif-empty { padding: 18px 10px; text-align: center; font-size: .82rem; color: var(--ink-faint); }
 
 .page { padding: 28px; max-width: 1160px; }
 
@@ -264,7 +279,30 @@ input, select, textarea { font-family: inherit; }
 .avatar-lg { width: 52px; height: 52px; font-size: 1rem; }
 .avatar-xl { width: 68px; height: 68px; font-size: 1.2rem; }
 
+.profile-photo-wrap { position: relative; flex: none; }
+.profile-photo-wrap #profilePhoto {
+  width: 68px; height: 68px; border-radius: 50%; object-fit: cover; display: block;
+}
+.profile-photo-edit {
+  position: absolute; bottom: -2px; right: -2px; width: 26px; height: 26px;
+  border-radius: 50%; background: var(--ink); color: #fff; border: 2px solid #fff;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+}
+.profile-photo-edit:hover { opacity: .85; }
+
 .text-danger { color: var(--danger-fg); }
+
+/* Modal genérico ------------------------------------------------------ */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(15, 15, 20, .45);
+  display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px;
+}
+.modal-card {
+  background: #fff; border-radius: 14px; padding: 24px; width: 100%; max-width: 380px;
+  box-shadow: 0 20px 50px rgba(0,0,0,.2);
+}
+.modal-card h2 { margin: 0 0 16px; font-family: var(--font-display); font-size: 1.1rem; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 18px; }
 
 /* 5. Paneles y encabezados de página -------------------------------- */
 .page-head { margin-bottom: 24px; }
@@ -297,6 +335,10 @@ input, select, textarea { font-family: inherit; }
 .profile-mini { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
 .profile-mini strong { display: block; font-size: .95rem; }
 .profile-mini span { font-size: .78rem; color: var(--ink-faint); }
+
+.profile-head-panel { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.profile-head-panel strong { display: block; font-size: 1rem; }
+.profile-head-panel span { font-size: .82rem; color: var(--ink-faint); }
 
 .info-list { display: flex; flex-direction: column; gap: 8px; margin: 0 0 4px; }
 .info-list > div { display: flex; justify-content: space-between; font-size: .85rem; padding: 7px 0; border-bottom: 1px solid var(--surface-alt); }
@@ -331,7 +373,7 @@ input, select, textarea { font-family: inherit; }
   padding: 16px; box-shadow: var(--shadow-card);
 }
 .record-ic { color: var(--violet-600); flex: none; }
-.record-info, .patient-info, .doctor-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.record-info, .patient-info, .doctor-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .record-info strong, .patient-info strong, .doctor-info strong { font-size: .9rem; }
 .record-info span, .doctor-info > span { font-size: .8rem; color: var(--ink-faint); }
 .patient-meta, .doctor-meta { display: flex; align-items: center; gap: 4px; font-size: .78rem; color: var(--ink-faint); }
@@ -453,4 +495,21 @@ textarea { resize: vertical; }
   .appt-side { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
   .page-head-row { align-items: stretch; }
   .search-box { min-width: 0; }
+
+  .topbar { padding: 12px 16px; gap: 10px; }
+  .breadcrumb { min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+  .topbar-actions { gap: 8px; }
+
+  .record-item, .patient-card, .doctor-card { flex-wrap: wrap; }
+
+  .profile-head-panel { flex-wrap: wrap; }
+}
+
+@media (max-width: 480px) {
+  .page { padding: 14px; }
+  .stat-row { grid-template-columns: 1fr; }
+  .panel { padding: 16px; }
+  .breadcrumb { max-width: 130px; }
+  .modal-card { padding: 18px; }
+  .form-grid { grid-template-columns: 1fr; }
 }

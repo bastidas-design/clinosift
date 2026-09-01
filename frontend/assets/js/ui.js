@@ -28,8 +28,15 @@
   }
 
   function nombreCompleto(persona) {
-    return persona ? (persona.nombres + ' ' + persona.apellidos) : 'Desconocido';
+    if (!persona) return 'Desconocido';
+    if (persona.nombre) return persona.nombre;
+    if (persona.nombres) return persona.nombres + ' ' + (persona.apellidos || '');
+    return 'Desconocido';
   }
 
-  global.ClinoUI = { formatFecha, formatHora, badgeHTML, nombreCompleto };
+  function iniciales(nombre) {
+    return (nombre || '').trim().split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('');
+  }
+
+  global.ClinoUI = { formatFecha, formatHora, badgeHTML, nombreCompleto, iniciales };
 })(window);

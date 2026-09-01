@@ -6,32 +6,86 @@ const { protegerRuta, permitirRoles } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// --- Autenticacion (publicas) ---
 router.post(
-  '/register',
-  [
-    body('nombre').notEmpty().withMessage('El nombre es obligatorio'),
-    body('email').isEmail().withMessage('Email invalido'),
-    body('password').isLength({ min: 6 }).withMessage('La contraseña debe tener al menos 6 caracteres'),
-    body('rol').optional().isIn(['admin', 'medico', 'paciente']).withMessage('Rol invalido')
-  ],
-  authController.registrar
+'/register',
+[
+body('nombre').notEmpty().withMessage('El nombre es obligatorio'),
+body('tipoDocumento')
+.isIn(['cedula', 'tarjeta', 'pasaporte'])
+.withMessage('Tipo de documento invalido'),
+body('documento').notEmpty().withMessage('El documento es obligatorio'),
+body('email').isEmail().withMessage('Email invalido'),
+body('password')
+.isLength({ min: 6 })
+.withMessage('La contraseña debe tener al menos 6 caracteres')
+],
+authController.registrar
 );
 
 router.post(
-  '/login',
-  [
-    body('email').isEmail().withMessage('Email invalido'),
-    body('password').notEmpty().withMessage('La contraseña es obligatoria')
-  ],
-  authController.login
+'/login',
+[
+body('tipoDocumento')
+.isIn(['cedula', 'tarjeta', 'pasaporte'])
+.withMessage('Tipo de documento invalido'),
+body('documento').notEmpty().withMessage('El documento es obligatorio'),
+body('password').notEmpty().withMessage('La contraseña es obligatoria')
+],
+authController.login
 );
 
-// --- Rutas protegidas ---
+router.post(
+'/olvide-password',
+[
+body('tipoDocumento')
+.isIn(['cedula', 'tarjeta', 'pasaporte'])
+.withMessage('Tipo de documento invalido'),
+body('documento').notEmpty().withMessage('El documento es obligatorio')
+],
+authController.solicitarRecuperacion
+);
+
+router.post(
+'/restablecer-password',
+[
+body('token').notEmpty().withMessage('Token invalido'),
+body('passwordNueva')
+.isLength({ min: 6 })
+.withMessage('La contraseña debe tener al menos 6 caracteres')
+],
+authController.restablecerPassword
+);
+
 router.get('/me', protegerRuta, authController.perfil);
-router.get('/', protegerRuta, permitirRoles('admin'), usuarioController.listar);
-router.get('/:id', protegerRuta, permitirRoles('admin'), usuarioController.obtener);
-router.put('/:id', protegerRuta, permitirRoles('admin'), usuarioController.actualizar);
-router.delete('/:id', protegerRuta, permitirRoles('admin'), usuarioController.eliminar);
+
+router.put('/me/password', protegerRuta, authController.cambiarPassword);
+
+router.get(
+'/',
+protegerRuta,
+permitirRoles('admin'),
+usuarioController.listar
+);
+
+router.get(
+'/',
+protegerRuta,
+permitirRoles('admin'),
+usuarioController.obtener
+);
+
+router.put(
+'/',
+protegerRuta,
+permitirRoles('admin'),
+usuarioController.actualizar
+);
+
+router.delete(
+'/',
+protegerRuta,
+permitirRoles('admin'),
+usuarioController.eliminar
+);
 
 module.exports = router;

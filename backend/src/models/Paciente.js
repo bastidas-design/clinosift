@@ -28,6 +28,30 @@ const pacienteSchema = new Schema(
       type: String,
       default: null,
       trim: true
+    },
+    email: {
+      type: String,
+      default: null,
+      lowercase: true,
+      trim: true
+    },
+    ciudad: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    fechaNacimiento: {
+      type: String,
+      default: null
+    },
+    genero: {
+      type: String,
+      default: null,
+      trim: true
+    },
+    foto: {
+      type: String,
+      default: null
     }
   },
   { timestamps: true }

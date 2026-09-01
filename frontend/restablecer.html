@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Restablecer contraseña — ClinoSift</title>
+<link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body class="auth-body">
+<main class="auth-wrap">
+  <div class="auth-card">
+    <img src="assets/images/logo.svg" alt="" width="64" height="64" class="auth-logo">
+    <h1>Crear nueva contraseña</h1>
+    <p class="auth-sub" id="subTexto">Escribe tu nueva contraseña para continuar.</p>
+
+    <form class="auth-form" id="restablecerForm">
+      <label for="passwordNueva">Nueva contraseña</label>
+      <input type="password" id="passwordNueva" name="passwordNueva" minlength="6" required>
+
+      <label for="passwordConfirmar">Confirmar nueva contraseña</label>
+      <input type="password" id="passwordConfirmar" name="passwordConfirmar" minlength="6" required>
+
+      <p class="auth-error" id="restablecerError" hidden></p>
+      <p class="auth-success" id="restablecerOk" hidden></p>
+
+      <div class="auth-actions">
+        <button type="submit" class="btn btn-primary btn-block" id="restablecerBtn">
+          Guardar nueva contraseña
+        </button>
+        <a href="login.html" class="btn btn-ghost btn-block">
+          Volver a iniciar sesión
+        </a>
+      </div>
+    </form>
+
+    <p class="auth-error" id="sinTokenError" hidden>
+      Este enlace no es válido. Solicita uno nuevo desde
+      <a href="recuperar.html">Olvidé mi contraseña</a>.
+    </p>
+  </div>
+</main>
+
+<script src="assets/js/api.js"></script>
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var token = params.get('token');
+  var form = document.getElementById('restablecerForm');
+
+  if (!token) {
+    form.hidden = true;
+    document.getElementById('subTexto').hidden = true;
+    document.getElementById('sinTokenError').hidden = false;
+    return;
+  }
+
+  var errorEl = document.getElementById('restablecerError');
+  var okEl = document.getElementById('restablecerOk');
+  var btn = document.getElementById('restablecerBtn');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    errorEl.hidden = true;
+    okEl.hidden = true;
+
+    var nueva = document.getElementById('passwordNueva').value;
+    var confirmar = document.getElementById('passwordConfirmar').value;
+
+    if (nueva !== confirmar) {
+      errorEl.textContent = 'Las dos contraseñas no coinciden.';
+      errorEl.hidden = false;
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Guardando...';
+
+    try {
+      var resultado = await window.ClinoAuth.restablecerPassword(token, nueva);
+      if (!resultado.ok) {
+        errorEl.textContent = resultado.error;
+        errorEl.hidden = false;
+        return;
+      }
+      form.hidden = true;
+      okEl.textContent = resultado.mensaje;
+      okEl.hidden = false;
+      setTimeout(function () { window.location.href = 'login.html'; }, 2000);
+    } catch (error) {
+      console.error(error);
+      errorEl.textContent = 'No se pudo restablecer la contraseña. Verifique que el backend esté funcionando.';
+      errorEl.hidden = false;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Guardar nueva contraseña';
+    }
+  });
+})();
+</script>
+</body>
+</html>

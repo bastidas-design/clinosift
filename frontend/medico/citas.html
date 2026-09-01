@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/app.css">
 <script>window.CLINO_REQUIRED_ROLE = "medico";</script>
-<script src="../assets/js/db.js"></script>
+<script src="../assets/js/api.js"></script>
 <script src="../assets/js/guard.js"></script>
 </head>
 <body>
@@ -59,20 +59,6 @@
               <strong>Notificaciones</strong>
               <a href="#" class="notif-mark">Marcar todas leídas</a>
             </div>
-            <div class="notif-item">
-              <span class="notif-ic notif-ic-ok"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 8 14.5 16 5.5"/></svg></span>
-              <div>
-                <p>Cita confirmada</p>
-                <span>Dr. Oscar Cabrera Pino · hoy 9:00 a.m.</span>
-              </div>
-            </div>
-            <div class="notif-item">
-              <span class="notif-ic notif-ic-info"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h6l3 3v11.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z"/><path d="M12 2.5V6h3.2"/><path d="M7 10h6M7 12.7h6M7 15.4h4"/></svg></span>
-              <div>
-                <p>Nuevo resultado disponible</p>
-                <span>Análisis de sangre listo para revisar</span>
-              </div>
-            </div>
           </div>
         </div>
         <span class="avatar avatar-neutral avatar-sm" data-user-initials>--</span>
@@ -107,33 +93,42 @@
 <script src="../assets/js/ui.js"></script>
 <script src="../assets/js/app.js"></script>
 <script>
-  ClinoDB.pintarChrome();
+  ClinoAuth.pintarChrome();
+  ClinoAuth.iniciarNotificaciones();
   document.getElementById('logoutLink').addEventListener('click', function (e) {
     e.preventDefault();
-    ClinoDB.logout();
+    ClinoAuth.logout();
     window.location.href = '../login.html';
   });
 </script>
 
 <script>
 (function () {
-  var session = ClinoDB.getSession();
+  var session = ClinoAuth.getSession();
 
   function accionesHTML(c) {
     var botones = '';
     if (c.estado === 'pendiente') {
-      botones += '<a href="#" class="card-link" data-accion="confirmada" data-id="' + c.id + '">Confirmar</a> &nbsp;';
+      botones += '<a href="#" class="card-link" data-accion="confirmada" data-id="' + c._id + '">Confirmar</a> &nbsp;';
     }
     if (c.estado === 'pendiente' || c.estado === 'confirmada') {
-      botones += '<a href="#" class="card-link" data-accion="completada" data-id="' + c.id + '">Completar</a> &nbsp;';
-      botones += '<a href="#" class="text-danger" data-accion="cancelada" data-id="' + c.id + '">Cancelar</a>';
+      botones += '<a href="#" class="card-link" data-accion="completada" data-id="' + c._id + '">Completar</a> &nbsp;';
+      botones += '<a href="#" class="text-danger" data-accion="cancelada" data-id="' + c._id + '">Cancelar</a>';
     }
     return botones;
   }
 
-  function render() {
-    var citas = ClinoDB.getCitasPorMedico(session.medicoId)
-      .sort(function (a, b) { return (b.fecha + b.hora).localeCompare(a.fecha + a.hora); });
+  async function render() {
+    var todas;
+    try {
+      todas = await ClinoAuth.obtenerCitas();
+    } catch (error) {
+      console.error(error);
+      return;
+    }
+    var citas = todas.filter(function (c) {
+      return c.medico && String(c.medico._id) === String(session.medicoId);
+    }).sort(function (a, b) { return (b.fecha + b.hora).localeCompare(a.fecha + a.hora); });
     var pendientes = citas.filter(function (c) { return c.estado === 'pendiente'; });
 
     pintar('listaPendientes', pendientes);
@@ -148,7 +143,7 @@
       var li = document.createElement('li');
       li.className = 'patient-card';
       li.innerHTML =
-        '<span class="avatar avatar-neutral">' + ClinoDB.iniciales(ClinoUI.nombreCompleto(c.paciente)) + '</span>' +
+        '<span class="avatar avatar-neutral">' + ClinoUI.iniciales(ClinoUI.nombreCompleto(c.paciente)) + '</span>' +
         '<div class="patient-info">' +
           '<strong>' + ClinoUI.nombreCompleto(c.paciente) + '</strong>' +
           '<span class="patient-meta">' + ClinoUI.formatFecha(c.fecha) + ' &middot; ' + ClinoUI.formatHora(c.hora) + '</span>' +
@@ -160,9 +155,9 @@
     });
 
     ul.querySelectorAll('[data-accion]').forEach(function (a) {
-      a.addEventListener('click', function (e) {
+      a.addEventListener('click', async function (e) {
         e.preventDefault();
-        ClinoDB.actualizarEstadoCita(a.getAttribute('data-id'), a.getAttribute('data-accion'));
+        await ClinoAuth.actualizarCita(a.getAttribute('data-id'), { estado: a.getAttribute('data-accion') });
         render();
       });
     });

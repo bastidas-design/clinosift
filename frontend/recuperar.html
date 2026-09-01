@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Recuperar contraseña — ClinoSift</title>
+<link rel="icon" href="assets/images/logo.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body class="auth-body">
+<main class="auth-wrap">
+  <div class="auth-card">
+    <img src="assets/images/logo.svg" alt="" width="64" height="64" class="auth-logo">
+    <h1>Recuperar contraseña</h1>
+    <p class="auth-sub">Ingresa tu documento y te enviaremos un enlace a tu correo registrado.</p>
+
+    <form class="auth-form" id="recuperarForm">
+      <label for="tipoDocumento">Tipo de documento</label>
+      <select id="tipoDocumento" name="tipoDocumento" required>
+        <option value="cedula">Cédula de ciudadanía</option>
+        <option value="tarjeta">Tarjeta de identidad</option>
+        <option value="pasaporte">Pasaporte</option>
+      </select>
+
+      <label for="documento">Número de documento</label>
+      <input
+        type="text"
+        id="documento"
+        name="documento"
+        placeholder="Ingrese su número"
+        autocomplete="username"
+        required
+      >
+
+      <p class="auth-error" id="recuperarError" hidden></p>
+      <p class="auth-success" id="recuperarOk" hidden></p>
+
+      <div class="auth-actions">
+        <button type="submit" class="btn btn-primary btn-block" id="recuperarBtn">
+          Enviar enlace de recuperación
+        </button>
+        <a href="login.html" class="btn btn-ghost btn-block">
+          Volver a iniciar sesión
+        </a>
+      </div>
+    </form>
+  </div>
+</main>
+
+<script src="assets/js/api.js"></script>
+<script>
+(function () {
+  var form = document.getElementById('recuperarForm');
+  var errorEl = document.getElementById('recuperarError');
+  var okEl = document.getElementById('recuperarOk');
+  var btn = document.getElementById('recuperarBtn');
+
+  form.addEventListener('submit', async function (e) {
+    e.preventDefault();
+    errorEl.hidden = true;
+    okEl.hidden = true;
+
+    var tipoDocumento = document.getElementById('tipoDocumento').value;
+    var documento = document.getElementById('documento').value.trim();
+
+    if (!tipoDocumento || !documento) {
+      errorEl.textContent = 'Complete todos los campos.';
+      errorEl.hidden = false;
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Enviando...';
+
+    try {
+      var resultado = await window.ClinoAuth.solicitarRecuperacion(tipoDocumento, documento);
+      if (!resultado.ok) {
+        errorEl.textContent = resultado.error;
+        errorEl.hidden = false;
+        return;
+      }
+      form.reset();
+      okEl.textContent = resultado.mensaje;
+      okEl.hidden = false;
+    } catch (error) {
+      console.error(error);
+      errorEl.textContent = 'No se pudo completar la solicitud. Verifique que el backend esté funcionando.';
+      errorEl.hidden = false;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Enviar enlace de recuperación';
+    }
+  });
+})();
+</script>
+</body>
+</html>

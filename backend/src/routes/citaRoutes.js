@@ -15,7 +15,8 @@ router.post(
     body('paciente').isMongoId().withMessage('paciente debe ser un ObjectId valido'),
     body('medico').isMongoId().withMessage('medico debe ser un ObjectId valido'),
     body('fecha').matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('fecha debe tener formato YYYY-MM-DD'),
-    body('hora').matches(/^\d{2}:\d{2}$/).withMessage('hora debe tener formato HH:MM')
+    body('hora').matches(/^\d{2}:\d{2}$/).withMessage('hora debe tener formato HH:MM'),
+    body('motivo').notEmpty().withMessage('El motivo de consulta es obligatorio')
   ],
   ctrl.crear
 );

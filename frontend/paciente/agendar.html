@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/app.css">
 <script>window.CLINO_REQUIRED_ROLE = "paciente";</script>
-<script src="../assets/js/db.js"></script>
+<script src="../assets/js/api.js"></script>
 <script src="../assets/js/guard.js"></script>
 </head>
 <body>
@@ -61,20 +61,6 @@
             <div class="notif-panel-head">
               <strong>Notificaciones</strong>
               <a href="#" class="notif-mark">Marcar todas leídas</a>
-            </div>
-            <div class="notif-item">
-              <span class="notif-ic notif-ic-ok"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 8 14.5 16 5.5"/></svg></span>
-              <div>
-                <p>Cita confirmada</p>
-                <span>Dr. Oscar Cabrera Pino · hoy 9:00 a.m.</span>
-              </div>
-            </div>
-            <div class="notif-item">
-              <span class="notif-ic notif-ic-info"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h6l3 3v11.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z"/><path d="M12 2.5V6h3.2"/><path d="M7 10h6M7 12.7h6M7 15.4h4"/></svg></span>
-              <div>
-                <p>Nuevo resultado disponible</p>
-                <span>Análisis de sangre listo para revisar</span>
-              </div>
             </div>
           </div>
         </div>
@@ -132,48 +118,71 @@
 <script src="../assets/js/ui.js"></script>
 <script src="../assets/js/app.js"></script>
 <script>
-  ClinoDB.pintarChrome();
+  ClinoAuth.pintarChrome();
+  ClinoAuth.iniciarNotificaciones();
   document.getElementById('logoutLink').addEventListener('click', function (e) {
     e.preventDefault();
-    ClinoDB.logout();
+    ClinoAuth.logout();
     window.location.href = '../login.html';
   });
 </script>
 
 <script>
 (function () {
-  var session = ClinoDB.getSession();
-  var db = JSON.parse(localStorage.getItem('clinosift_db_v1'));
+  var session = ClinoAuth.getSession();
   var selectMedico = document.getElementById('medico');
+  var submitBtn = document.querySelector('#agendarForm button[type="submit"]');
 
-  db.medicos.forEach(function (m) {
-    var opt = document.createElement('option');
-    opt.value = m.id;
-    opt.textContent = 'Dr(a). ' + m.nombres + ' ' + m.apellidos + ' — ' + m.especialidad;
-    selectMedico.appendChild(opt);
-  });
+  async function cargarMedicos() {
+    try {
+      var medicos = await ClinoAuth.obtenerMedicos();
+      medicos.forEach(function (m) {
+        var opt = document.createElement('option');
+        opt.value = m._id;
+        opt.textContent = 'Dr(a). ' + m.nombre + ' — ' + m.especialidad;
+        selectMedico.appendChild(opt);
+      });
+    } catch (error) {
+      console.error(error);
+      var errorEl = document.getElementById('agendarError');
+      errorEl.textContent = 'No se pudo cargar la lista de médicos.';
+      errorEl.hidden = false;
+    }
+  }
+  cargarMedicos();
 
-  document.getElementById('agendarForm').addEventListener('submit', function (e) {
+  document.getElementById('agendarForm').addEventListener('submit', async function (e) {
     e.preventDefault();
     var errorEl = document.getElementById('agendarError');
+    var okEl = document.getElementById('agendarOk');
     errorEl.hidden = true;
+    okEl.hidden = true;
+
+    if (!session.pacienteId) {
+      errorEl.textContent = 'No se encontró tu registro de paciente. Vuelve a iniciar sesión.';
+      errorEl.hidden = false;
+      return;
+    }
 
     var datos = {
-      pacienteId: session.pacienteId,
-      medicoId: selectMedico.value,
+      paciente: session.pacienteId,
+      medico: selectMedico.value,
       fecha: document.getElementById('fecha').value,
       hora: document.getElementById('hora').value,
       motivo: document.getElementById('motivo').value.trim()
     };
 
-    var resultado = ClinoDB.crearCita(datos);
+    submitBtn.disabled = true;
+    var resultado = await ClinoAuth.crearCita(datos);
+    submitBtn.disabled = false;
+
     if (!resultado.ok) {
       errorEl.textContent = resultado.error;
       errorEl.hidden = false;
       return;
     }
 
-    document.getElementById('agendarOk').hidden = false;
+    okEl.hidden = false;
     setTimeout(function () { window.location.href = 'citas.html'; }, 1200);
   });
 })();

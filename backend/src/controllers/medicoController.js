@@ -15,7 +15,13 @@ exports.listar = async function (req, res, next) {
 exports.obtener = async function (req, res, next) {
   try {
     const medico = await Medico.findById(req.params.id);
-    if (!medico) return res.status(404).json({ error: 'Medico no encontrado' });
+
+    if (!medico) {
+      return res.status(404).json({
+        error: 'Medico no encontrado'
+      });
+    }
+
     res.json(medico);
   } catch (error) {
     next(error);
@@ -25,7 +31,12 @@ exports.obtener = async function (req, res, next) {
 // POST /api/medicos
 exports.crear = async function (req, res, next) {
   const errores = validationResult(req);
-  if (!errores.isEmpty()) return res.status(400).json({ errores: errores.array() });
+
+  if (!errores.isEmpty()) {
+    return res.status(400).json({
+      errores: errores.array()
+    });
+  }
 
   try {
     const medico = await Medico.create({
@@ -34,6 +45,7 @@ exports.crear = async function (req, res, next) {
       telefono: req.body.telefono || null,
       email: req.body.email || null
     });
+
     res.status(201).json(medico);
   } catch (error) {
     next(error);
@@ -43,11 +55,21 @@ exports.crear = async function (req, res, next) {
 // PUT /api/medicos/:id
 exports.actualizar = async function (req, res, next) {
   try {
-    const medico = await Medico.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true
-    });
-    if (!medico) return res.status(404).json({ error: 'Medico no encontrado' });
+    const medico = await Medico.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      {
+        new: true,
+        runValidators: true
+      }
+    );
+
+    if (!medico) {
+      return res.status(404).json({
+        error: 'Medico no encontrado'
+      });
+    }
+
     res.json(medico);
   } catch (error) {
     next(error);
@@ -58,8 +80,16 @@ exports.actualizar = async function (req, res, next) {
 exports.eliminar = async function (req, res, next) {
   try {
     const medico = await Medico.findByIdAndDelete(req.params.id);
-    if (!medico) return res.status(404).json({ error: 'Medico no encontrado' });
-    res.json({ mensaje: 'Medico eliminado correctamente' });
+
+    if (!medico) {
+      return res.status(404).json({
+        error: 'Medico no encontrado'
+      });
+    }
+
+    res.json({
+      mensaje: 'Medico eliminado correctamente'
+    });
   } catch (error) {
     next(error);
   }

@@ -1,5 +1,6 @@
 const { validationResult } = require('express-validator');
 const Paciente = require('../models/Paciente');
+const Usuario = require('../models/Usuario');
 
 // GET /api/pacientes
 exports.listar = async function (req, res, next) {
@@ -44,12 +45,37 @@ exports.crear = async function (req, res, next) {
 // PUT /api/pacientes/:id
 exports.actualizar = async function (req, res, next) {
   try {
-    const paciente = await Paciente.findByIdAndUpdate(req.params.id, req.body, {
+    const paciente = await Paciente.findById(req.params.id);
+    if (!paciente) return res.status(404).json({ error: 'Paciente no encontrado' });
+
+    let datos = req.body;
+
+    // Un paciente solo puede editar su propio registro, y solo sus datos de contacto/foto
+    if (req.usuario.rol === 'paciente') {
+      let documentoUsuario = req.usuario.documento;
+
+      // Sesiones abiertas antes de que el token empezara a incluir "documento":
+      // se busca en la base de datos en vez de bloquear el guardado.
+      if (!documentoUsuario) {
+        const usuario = await Usuario.findById(req.usuario.id);
+        documentoUsuario = usuario ? usuario.documento : null;
+      }
+
+      if (String(paciente.documento) !== String(documentoUsuario)) {
+        return res.status(403).json({ error: 'No tiene permisos para editar este paciente' });
+      }
+      const permitidos = ['telefono', 'direccion', 'email', 'ciudad', 'fechaNacimiento', 'genero', 'foto'];
+      datos = {};
+      permitidos.forEach(function (campo) {
+        if (req.body[campo] !== undefined) datos[campo] = req.body[campo];
+      });
+    }
+
+    const actualizado = await Paciente.findByIdAndUpdate(req.params.id, datos, {
       new: true,
       runValidators: true
     });
-    if (!paciente) return res.status(404).json({ error: 'Paciente no encontrado' });
-    res.json(paciente);
+    res.json(actualizado);
   } catch (error) {
     next(error);
   }

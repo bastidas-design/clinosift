@@ -8,7 +8,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="../assets/css/app.css">
 <script>window.CLINO_REQUIRED_ROLE = "paciente";</script>
-<script src="../assets/js/db.js"></script>
+<script src="../assets/js/api.js"></script>
 <script src="../assets/js/guard.js"></script>
 </head>
 <body>
@@ -62,20 +62,6 @@
               <strong>Notificaciones</strong>
               <a href="#" class="notif-mark">Marcar todas leídas</a>
             </div>
-            <div class="notif-item">
-              <span class="notif-ic notif-ic-ok"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10.5 8 14.5 16 5.5"/></svg></span>
-              <div>
-                <p>Cita confirmada</p>
-                <span>Dr. Oscar Cabrera Pino · hoy 9:00 a.m.</span>
-              </div>
-            </div>
-            <div class="notif-item">
-              <span class="notif-ic notif-ic-info"><svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2.5h6l3 3v11.5a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1Z"/><path d="M12 2.5V6h3.2"/><path d="M7 10h6M7 12.7h6M7 15.4h4"/></svg></span>
-              <div>
-                <p>Nuevo resultado disponible</p>
-                <span>Análisis de sangre listo para revisar</span>
-              </div>
-            </div>
           </div>
         </div>
         <span class="avatar avatar-neutral avatar-sm" data-user-initials>--</span>
@@ -90,10 +76,18 @@
 </div>
 
 <div class="panel profile-head-panel">
-  <span class="avatar avatar-neutral avatar-xl" id="profileInitials">--</span>
+  <div class="profile-photo-wrap">
+    <span class="avatar avatar-neutral avatar-xl" id="profileInitials">--</span>
+    <img id="profilePhoto" alt="Foto de perfil" hidden>
+    <button type="button" class="icon-btn profile-photo-edit" id="fotoBtn" aria-label="Cambiar foto de perfil">
+      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 5.5 8 3.5h4l1.5 2H16a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-8a1 1 0 0 1 1-1h2.5Z"/><circle cx="10" cy="10.5" r="2.7"/></svg>
+    </button>
+    <input type="file" id="fotoInput" accept="image/*" hidden>
+  </div>
   <div>
     <strong id="profileName">—</strong>
     <span>Paciente activo · ClinoSift</span>
+    <p class="auth-error" id="fotoError" hidden></p>
   </div>
 </div>
 
@@ -154,22 +148,37 @@
 <script src="../assets/js/ui.js"></script>
 <script src="../assets/js/app.js"></script>
 <script>
-  ClinoDB.pintarChrome();
+  ClinoAuth.pintarChrome();
+  ClinoAuth.iniciarNotificaciones();
   document.getElementById('logoutLink').addEventListener('click', function (e) {
     e.preventDefault();
-    ClinoDB.logout();
+    ClinoAuth.logout();
     window.location.href = '../login.html';
   });
 </script>
 
 <script>
 (function () {
-  var session = ClinoDB.getSession();
-  var paciente = ClinoDB.getPaciente(session.pacienteId);
+  var session = ClinoAuth.getSession();
+  var paciente = null;
+
+  var elInitials = document.getElementById('profileInitials');
+  var elPhoto = document.getElementById('profilePhoto');
+
+  function mostrarFoto(fotoBase64, nombre) {
+    if (fotoBase64) {
+      elPhoto.src = fotoBase64;
+      elPhoto.hidden = false;
+      elInitials.hidden = true;
+    } else {
+      elPhoto.hidden = true;
+      elInitials.hidden = false;
+      elInitials.textContent = ClinoAuth.iniciales(nombre);
+    }
+  }
 
   function pintar(p) {
-    document.getElementById('profileInitials').textContent = ClinoDB.iniciales(p.nombres + ' ' + p.apellidos);
-    document.getElementById('profileName').textContent = p.nombres + ' ' + p.apellidos;
+    document.getElementById('profileName').textContent = p.nombre;
     document.getElementById('documento').value = p.documento;
     document.getElementById('fnac').value = p.fechaNacimiento || '';
     document.getElementById('genero').value = p.genero || '';
@@ -177,12 +186,22 @@
     document.getElementById('email').value = p.email || '';
     document.getElementById('direccion').value = p.direccion || '';
     document.getElementById('ciudad').value = p.ciudad || '';
+    mostrarFoto(p.foto, p.nombre);
   }
-  pintar(paciente);
 
-  document.getElementById('perfilForm').addEventListener('submit', function (e) {
+  async function cargar() {
+    try {
+      paciente = await ClinoAuth.obtenerPaciente(session.pacienteId);
+      pintar(paciente);
+    } catch (error) {
+      console.error(error);
+    }
+  }
+  cargar();
+
+  document.getElementById('perfilForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    var actualizado = ClinoDB.updatePaciente(session.pacienteId, {
+    var resultado = await ClinoAuth.actualizarPaciente(session.pacienteId, {
       fechaNacimiento: document.getElementById('fnac').value,
       genero: document.getElementById('genero').value,
       telefono: document.getElementById('telefono').value,
@@ -190,10 +209,77 @@
       direccion: document.getElementById('direccion').value,
       ciudad: document.getElementById('ciudad').value
     });
-    pintar(actualizado);
     var ok = document.getElementById('perfilOk');
+    if (!resultado.ok) {
+      alert(resultado.error);
+      return;
+    }
+    paciente = resultado.paciente;
+    pintar(paciente);
     ok.hidden = false;
     setTimeout(function () { ok.hidden = true; }, 2500);
+  });
+
+  // ---- Foto de perfil (cámara o galería) ----
+  var fotoBtn = document.getElementById('fotoBtn');
+  var fotoInput = document.getElementById('fotoInput');
+  var fotoError = document.getElementById('fotoError');
+
+  fotoBtn.addEventListener('click', function () {
+    fotoInput.click();
+  });
+
+  function comprimirImagen(archivo) {
+    return new Promise(function (resolve, reject) {
+      var lector = new FileReader();
+      lector.onerror = function () { reject(new Error('No se pudo leer la imagen')); };
+      lector.onload = function () {
+        var img = new Image();
+        img.onerror = function () { reject(new Error('Archivo de imagen inválido')); };
+        img.onload = function () {
+          var MAX = 400;
+          var escala = Math.min(1, MAX / Math.max(img.width, img.height));
+          var canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * escala);
+          canvas.height = Math.round(img.height * escala);
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.src = lector.result;
+      };
+      lector.readAsDataURL(archivo);
+    });
+  }
+
+  fotoInput.addEventListener('change', async function () {
+    var archivo = fotoInput.files[0];
+    fotoInput.value = '';
+    if (!archivo) return;
+    fotoError.hidden = true;
+
+    if (!archivo.type.startsWith('image/')) {
+      fotoError.textContent = 'Selecciona un archivo de imagen válido.';
+      fotoError.hidden = false;
+      return;
+    }
+
+    try {
+      var base64 = await comprimirImagen(archivo);
+      mostrarFoto(base64, paciente ? paciente.nombre : '');
+      var resultado = await ClinoAuth.actualizarPaciente(session.pacienteId, { foto: base64 });
+      if (!resultado.ok) {
+        fotoError.textContent = resultado.error;
+        fotoError.hidden = false;
+        mostrarFoto(paciente ? paciente.foto : null, paciente ? paciente.nombre : '');
+        return;
+      }
+      paciente = resultado.paciente;
+    } catch (error) {
+      console.error(error);
+      fotoError.textContent = 'No se pudo procesar la imagen.';
+      fotoError.hidden = false;
+    }
   });
 })();
 </script>

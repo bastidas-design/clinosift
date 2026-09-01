@@ -20,7 +20,7 @@ router.post(
   ctrl.crear
 );
 
-router.put('/:id', permitirRoles('admin', 'medico'), ctrl.actualizar);
+router.put('/:id', permitirRoles('admin', 'medico', 'paciente'), ctrl.actualizar);
 router.delete('/:id', permitirRoles('admin'), ctrl.eliminar);
 
 module.exports = router;
